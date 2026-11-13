@@ -1,0 +1,28 @@
+{
+  "platforms": [
+    {
+      "platform": "WolTv",
+      "name": "WOL TV",
+      "devices": [
+        {
+          "name": "客厅电脑",
+          "mac": "AA:BB:CC:DD:EE:FF",
+          "host": "192.168.1.100",
+          "broadcastAddress": "192.168.1.255",
+          "probe": "ping",
+          "shutdown": {
+            "type": "command",
+            "command": "/usr/bin/ssh",
+            "args": [
+              "-o", "BatchMode=yes",
+              "-o", "ConnectTimeout=3",
+              "-o", "StrictHostKeyChecking=yes",
+              "wol@192.168.1.100",
+              "sudo -n /usr/sbin/shutdown -h now"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,59 @@
+{
+  "pluginAlias": "WolTv",
+  "pluginType": "platform",
+  "singular": true,
+  "headerDisplay": "将 WOL 主机添加为 Apple Home 电视。每台电视需在家庭 App 中单独配对，使用所属 Homebridge（或子桥）的配对码。WOL 仅能开机，关机需配置命令或 HTTP 接口。",
+  "schema": {
+    "type": "object",
+    "properties": {
+      "name": { "title": "平台名称", "type": "string", "default": "WOL TV" },
+      "devices": {
+        "title": "主机",
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": ["name", "mac", "host"],
+          "properties": {
+            "name": { "title": "电视名称", "type": "string", "minLength": 1, "maxLength": 64, "placeholder": "客厅电脑" },
+            "mac": { "title": "有线网卡 MAC 地址", "type": "string", "pattern": "^([0-9A-Fa-f]{12}|([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}|([0-9A-Fa-f]{2}-){5}[0-9A-Fa-f]{2})$", "placeholder": "AA:BB:CC:DD:EE:FF" },
+            "host": { "title": "主机 IP 或域名", "type": "string", "minLength": 1, "placeholder": "192.168.1.100", "description": "用于状态探测。建议在路由器中为主机设置 DHCP 地址保留。" },
+            "broadcastAddress": { "title": "WOL 广播地址", "type": "string", "default": "255.255.255.255", "description": "建议填目标子网广播地址，例如 192.168.1.255（/24 网络）；不是主机 IP。" },
+            "interfaceAddress": { "title": "发送网卡的本机 IPv4（可选）", "type": "string", "description": "多网卡环境可指定 Homebridge 使用的本机 IP；留空自动选择。" },
+            "wolPort": { "title": "WOL UDP 端口", "type": "integer", "default": 9, "minimum": 1, "maximum": 65535 },
+            "wolPackets": { "title": "WOL 发送次数", "type": "integer", "default": 3, "minimum": 1, "maximum": 10 },
+            "wolInterval": { "title": "WOL 重发间隔（毫秒）", "type": "integer", "default": 100, "minimum": 0, "maximum": 250 },
+            "probe": { "title": "状态探测方式", "type": "string", "enum": ["ping", "tcp"], "default": "ping", "description": "Ping 需要系统 ping 命令及主机响应 ICMP。TCP 仅在指定端口接受连接时视为开机。" },
+            "statusPort": { "title": "TCP 探测端口", "type": "integer", "minimum": 1, "maximum": 65535, "condition": { "functionBody": "return model.probe === 'tcp';" }, "description": "TCP 模式必填，例如 SSH 为 22，Windows RDP 为 3389。" },
+            "pollInterval": { "title": "状态探测间隔（秒）", "type": "integer", "default": 5, "minimum": 1, "maximum": 3600 },
+            "probeTimeout": { "title": "单次探测超时（毫秒）", "type": "integer", "default": 2000, "minimum": 100, "maximum": 5000 },
+            "offlineThreshold": { "title": "判定离线所需连续失败次数", "type": "integer", "default": 2, "minimum": 1, "maximum": 10 },
+            "onGracePeriod": { "title": "开机等待窗口（秒）", "type": "integer", "default": 90, "minimum": 0, "maximum": 600, "description": "发送成功后暂时显示为开机，等待主机上线；超时后恢复实际探测状态。" },
+            "offGracePeriod": { "title": "关机等待窗口（秒）", "type": "integer", "default": 30, "minimum": 0, "maximum": 600 },
+            "shutdownTimeout": { "title": "关机请求超时（毫秒）", "type": "integer", "default": 5000, "minimum": 100, "maximum": 8000 },
+            "shutdown": {
+              "title": "关机操作（可选）",
+              "type": "object",
+              "required": ["type"],
+              "properties": {
+                "type": { "title": "关机方式", "type": "string", "enum": ["command", "http"] },
+                "command": { "title": "可执行程序", "type": "string", "minLength": 1, "placeholder": "/usr/bin/ssh", "condition": { "functionBody": "return model.type === 'command';" }, "description": "在 Homebridge 所在系统或容器内执行，推荐绝对路径；不通过 Shell 解释。" },
+                "args": { "title": "命令参数", "type": "array", "items": { "type": "string" }, "condition": { "functionBody": "return model.type === 'command';" }, "description": "每个参数单独一项。SSH 的远程命令作为最后一项。" },
+                "url": { "title": "HTTP 关机地址", "type": "string", "minLength": 1, "condition": { "functionBody": "return model.type === 'http';" }, "placeholder": "http://192.168.1.100:8080/shutdown" },
+                "method": { "title": "HTTP 方法", "type": "string", "enum": ["POST", "PUT", "GET"], "default": "POST", "condition": { "functionBody": "return model.type === 'http';" } },
+                "headers": { "title": "HTTP 请求头", "type": "object", "additionalProperties": { "type": "string" }, "condition": { "functionBody": "return model.type === 'http';" }, "description": "例如 Authorization 请求头，可在 JSON 配置编辑器中设置。" },
+                "body": { "title": "HTTP 请求正文", "type": "string", "condition": { "functionBody": "return model.type === 'http' && model.method !== 'GET';" } }
+              },
+              "allOf": [
+                { "if": { "properties": { "type": { "const": "command" } }, "required": ["type"] }, "then": { "required": ["command"] } },
+                { "if": { "properties": { "type": { "const": "http" } }, "required": ["type"] }, "then": { "required": ["url"] } }
+              ]
+            }
+          },
+          "allOf": [
+            { "if": { "properties": { "probe": { "const": "tcp" } }, "required": ["probe"] }, "then": { "required": ["statusPort"] } }
+          ]
+        }
+      }
+    }
+  }
+}

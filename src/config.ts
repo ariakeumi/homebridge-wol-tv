@@ -75,6 +75,17 @@ function parseShutdown(value: unknown): DeviceConfig['shutdown'] {
     return undefined;
   }
   const input = object(value, 'shutdown');
+  // Config UI can save an optional form containing only its selector/defaults.
+  // Keep the TV usable until the user supplies an actual shutdown destination.
+  const blank = (field: unknown): boolean => field === undefined || (typeof field === 'string' && !field.trim());
+  if ((input.type === undefined || input.type === 'command' || input.type === 'http')
+    && blank(input.command) && blank(input.url) && blank(input.body)
+    && (input.args === undefined || (Array.isArray(input.args) && input.args.length === 0))
+    && (input.headers === undefined || (input.headers !== null && typeof input.headers === 'object'
+      && !Array.isArray(input.headers) && Object.keys(input.headers).length === 0))
+    && (input.method === undefined || ['POST', 'PUT', 'GET'].includes(String(input.method)))) {
+    return undefined;
+  }
   if (input.type === 'command') {
     const command = string(input.command, 'shutdown.command');
     if (input.args !== undefined && (!Array.isArray(input.args) || !input.args.every(arg => typeof arg === 'string'))) {

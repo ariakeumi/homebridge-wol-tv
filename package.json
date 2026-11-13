@@ -1,7 +1,7 @@
 {
   "name": "homebridge-wol-tv",
   "displayName": "WOL TV",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Expose Wake-on-LAN computers as Apple Home televisions with real power state monitoring.",
   "type": "module",
   "main": "dist/index.js",

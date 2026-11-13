@@ -28,11 +28,20 @@ npm test
 npm pack
 ```
 
-将生成的 `homebridge-wol-tv-1.0.0.tgz` 拷贝到 Homebridge 服务器，在其环境中安装：
+将生成的 `homebridge-wol-tv-1.0.1.tgz` 拷贝到 Homebridge 服务器，在其环境中安装：
 
 ```sh
-npm install -g ./homebridge-wol-tv-1.0.0.tgz
+npm install -g ./homebridge-wol-tv-1.0.1.tgz
 ```
+
+**官方 Docker 镜像安装位置：** 如果 Homebridge 使用 `/homebridge/node_modules` 管理插件，请在容器终端中将安装包安装到该持久化目录，而不是使用上面的全局安装命令。例如源码克隆到 `/homebridge/homebridge-wol-tv` 时：
+
+```sh
+cd /homebridge
+npm install --save --package-lock=false --ignore-scripts --no-audit --no-fund ./homebridge-wol-tv/homebridge-wol-tv-1.0.1.tgz
+```
+
+这里使用已构建的 `.tgz` 包，因此安装时无需再运行构建脚本。安装完成后重启 Homebridge 并刷新插件列表；日志应显示 `Loaded plugin: homebridge-wol-tv@1.0.1`。将安装包保留在此路径，容器重建时可根据 `/homebridge/package.json` 中记录的文件依赖恢复安装。
 
 也可在 Homebridge 开发环境执行 `npm link`，然后启动 `homebridge -D`。打包产物内含编译后的 `dist`、配置界面和示例，不需要在 Homebridge 服务器安装 TypeScript。修改源码后需重新构建并重启 Homebridge。
 
@@ -70,6 +79,8 @@ npm install -g ./homebridge-wol-tv-1.0.0.tgz
 `mac` 使用目标主机的网卡地址，`host` 用于状态检测。建议为目标主机保留 DHCP 地址。示例 `192.168.1.255` 仅适用于 `192.168.1.0/24` 子网，应根据实际子网掩码填写。
 
 **WOL 协议只支持唤醒，不支持关机。** 没有配置 `shutdown` 时仍可开机和同步状态；在线主机关机请求会返回错误，不会假装关机成功。
+
+从 1.0.1 起，设置界面中尚未填写命令或 URL 的空白关机表单也按未配置处理，不会阻止 TV 发布。有实质内容但格式不正确的关机配置仍会报告错误。
 
 ### 添加到 Apple Home
 

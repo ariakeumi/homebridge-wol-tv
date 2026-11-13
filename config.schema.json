@@ -33,7 +33,7 @@
             "shutdown": {
               "title": "关机操作（可选）",
               "type": "object",
-              "required": ["type"],
+              "description": "可暂时留空；未填写命令或 URL 时仅支持开机和状态检测。",
               "properties": {
                 "type": { "title": "关机方式", "type": "string", "enum": ["command", "http"] },
                 "command": { "title": "可执行程序", "type": "string", "minLength": 1, "placeholder": "/usr/bin/ssh", "condition": { "functionBody": "return model.type === 'command';" }, "description": "在 Homebridge 所在系统或容器内执行，推荐绝对路径；不通过 Shell 解释。" },
@@ -42,11 +42,7 @@
                 "method": { "title": "HTTP 方法", "type": "string", "enum": ["POST", "PUT", "GET"], "default": "POST", "condition": { "functionBody": "return model.type === 'http';" } },
                 "headers": { "title": "HTTP 请求头", "type": "object", "additionalProperties": { "type": "string" }, "condition": { "functionBody": "return model.type === 'http';" }, "description": "例如 Authorization 请求头，可在 JSON 配置编辑器中设置。" },
                 "body": { "title": "HTTP 请求正文", "type": "string", "condition": { "functionBody": "return model.type === 'http' && model.method !== 'GET';" } }
-              },
-              "allOf": [
-                { "if": { "properties": { "type": { "const": "command" } }, "required": ["type"] }, "then": { "required": ["command"] } },
-                { "if": { "properties": { "type": { "const": "http" } }, "required": ["type"] }, "then": { "required": ["url"] } }
-              ]
+              }
             }
           },
           "allOf": [

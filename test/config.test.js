@@ -40,7 +40,7 @@ test('validates command and HTTP shutdown contracts', () => {
     { type: 'command', command: '/bin/true', args: [] });
   assert.equal(parseDeviceConfig({ ...base, shutdown: { type: 'http', url: 'https://localhost/shutdown' } }).shutdown.method, 'POST');
   for (const shutdown of [
-    {}, { type: 'command', command: '' }, { type: 'command', command: 'ssh', args: 'host' },
+    { type: 'invalid' }, { type: 'command', command: 'ssh', args: 'host' },
     { type: 'http', url: 'file:///tmp/test' }, { type: 'http', url: 'invalid' },
     { type: 'http', url: 'http://user:secret@localhost' },
     { type: 'http', url: 'http://localhost', method: 'DELETE' },
@@ -52,13 +52,24 @@ test('validates command and HTTP shutdown contracts', () => {
   }
 });
 
+test('unfinished optional shutdown forms keep the host available without power off', () => {
+  for (const shutdown of [{}, { method: 'POST' }, { type: 'command' },
+    { type: 'command', command: ' ', args: [] }, { type: 'http', method: 'POST' },
+    { type: 'http', url: '', method: 'POST', headers: {}, body: '' }]) {
+    assert.equal(parseDeviceConfig({ ...base, shutdown }).shutdown, undefined);
+  }
+  assert.throws(() => parseDeviceConfig({ ...base, shutdown: { type: 'command', args: ['host'] } }));
+  assert.throws(() => parseDeviceConfig({ ...base, shutdown: { type: 'http', headers: { Authorization: 'token' } } }));
+});
+
 test('Homebridge UI schema validates examples and enforces conditional fields', () => {
   const schema = JSON.parse(readFileSync(new URL('../config.schema.json', import.meta.url), 'utf8'));
   const example = JSON.parse(readFileSync(new URL('../config.example.json', import.meta.url), 'utf8'));
   const validate = new Ajv({ strict: false }).compile(schema.schema);
   assert.equal(validate(example.platforms[0]), true, JSON.stringify(validate.errors));
   assert.equal(validate({ devices: [{ ...base, probe: 'tcp' }] }), false);
-  assert.equal(validate({ devices: [{ ...base, shutdown: { type: 'command' } }] }), false);
-  assert.equal(validate({ devices: [{ ...base, shutdown: { type: 'http' } }] }), false);
+  assert.equal(validate({ devices: [{ ...base, shutdown: { type: 'command' } }] }), true);
+  assert.equal(validate({ devices: [{ ...base, shutdown: { type: 'http' } }] }), true);
+  assert.equal(validate({ devices: [{ ...base, shutdown: {} }] }), true);
   assert.equal(validate({ devices: [{ ...base, probe: 'tcp', statusPort: 22 }] }), true);
 });
